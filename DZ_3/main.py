@@ -1,24 +1,28 @@
 import asyncio
 
+from aiogram import types
+from aiogram.filters import command
 from repo import BookRepo, UserStatsRepo
 
-def print_books(books):
-    for book in books:
-        print(f'<<{book[0]}>> - {book[1]}/{book[2]} стр.')
-def print_stat(stats):
-    print(f"Вы читаете {stats[0][1]} книги, всего прочитано {stats[0][2]} страницы.")
+from create_bot import bot, dp
+from handlers.start import start_router
+from handlers.modification import modification_router
+
+
 
 async def main():
-    book_repo = BookRepo("database.db")
-    user_stats_repo = UserStatsRepo("database.db")
-    await user_stats_repo.init_tables()
-    await book_repo.init_tables()
+
+    dp.include_routers(start_router, modification_router)
+    await dp.start_polling(bot)
 
 
 
 
 
-    #await book_repo.update_pages(3,5,2)
+
+
+
+    '''#await book_repo.update_pages(3,5,2)
     books = await book_repo.fetch_books(user_id=1)
     print_books(books)
 
@@ -28,6 +32,8 @@ async def main():
 
     #await book_repo.delete_book(1, 3)
 
-    '''books1 = await book_repo.fetch_books(user_id=1)
+    books1 = await book_repo.fetch_books(user_id=1)
     print(books1)'''
-asyncio.run(main())
+
+if __name__ == '__main__':
+    asyncio.run(main())

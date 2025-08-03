@@ -27,7 +27,7 @@ DELETE FROM `Persons`
 
 class BookService:
 
-    async def add_book(self, user_id: int, book: Book) -> None:
+    async def add_book(self, user_id: int, title: str, pages_count: int) -> None:
         pass
 
     async def increase_read_pages(self, user_id: int, book_id: int, pages: int) -> None:
@@ -38,3 +38,7 @@ class BookService:
 
     async def remove_book(self, user_id: int, book_id: int) -> None:
         pass
+
+
+class UserStatsService:
+    pass
