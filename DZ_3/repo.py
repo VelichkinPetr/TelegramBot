@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import aiosqlite
 
 from models import Book
-
 
 class BookRepo:
 
@@ -11,6 +12,7 @@ class BookRepo:
 
 
     async def init_tables(self) -> None:
+
         sql_command = """
                         CREATE TABLE IF NOT EXISTS `Books` (
                             `id` INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,14 +29,13 @@ class BookRepo:
 
 
     async def create_book(self, user_id: int, title: str, pages_count: int) -> Book:
+
         sql_command = f"""
                         INSERT INTO `Books` (`user_id`, `title`, `pages_count`) VALUES (
                             ?, ?, ?
                         )
                         """
         async with aiosqlite.connect(self.db_path) as db:
-            # Нужно для того, чтобы из базы данных по SELECT'у
-            # возвращались не кортежи, а словари
             db.row_factory = aiosqlite.Row
 
             await db.execute(sql_command, [user_id, title, pages_count])
@@ -43,35 +44,35 @@ class BookRepo:
             cursor = await db.execute(
                 "SELECT * FROM `Books` WHERE `title` = ?", [title]
             )
-            # raw_book = {'user_id': 1, 'id': 1, ...}
+
             raw_book = await cursor.fetchone()
             return Book(**dict(raw_book))
 
-
     async def update_pages(self, user_id: int, book_id: int, pages: int) -> Book:
+
         sql_command = """
                         UPDATE `Books`
-                        SET `pages_read` = `pages_read` + ?
-                        WHERE `id`=?;
+                        SET `pages_read` = ?
+                        WHERE `id`=? AND `user_id` = ?;
                         """
 
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
 
-            await db.execute(sql_command, [pages, book_id])
+            await db.execute(sql_command, [pages, book_id, user_id])
             await db.commit()
 
             cursor = await db.execute(
                 "SELECT * FROM `Books` WHERE `id` = ?", [book_id]
             )
+
             raw_book = await cursor.fetchone()
             return Book(**dict(raw_book))
-
 
     async def fetch_books(self, user_id: int):
 
         sql_command = """
-                        SELECT `title`, `pages_read`, `pages_count`  FROM `Books`
+                        SELECT `id`, `title`, `pages_read`, `pages_count` FROM `Books`
                         WHERE `user_id` = ?;
                         """
 
@@ -128,18 +129,20 @@ class UserStatsRepo:
 
 
     async def create_stats(self, user_id: int):
-        sql_command = f"""
-                       INSERT INTO `UserStats` (`user_id`) VALUES (
-                           ?
-                       )
-                       """
+        if not await self.get_stats(user_id):
+            sql_command = f"""
+                           INSERT INTO `UserStats` (`user_id`) VALUES (
+                               ?
+                           )
+                           """
 
-        async with aiosqlite.connect(self.db_path) as db:
-            await db.execute(sql_command, [user_id])
-            await db.commit()
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute(sql_command, [user_id])
+                await db.commit()
 
 
     async def update_stats(self, user_id: int):
+
         sql_command = f"""
                         UPDATE `UserStats`
                             SET total_books = (SELECT COUNT(*) FROM Books WHERE user_id = ?),
